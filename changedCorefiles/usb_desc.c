@@ -182,9 +182,11 @@ static uint8_t keyboard_report_desc[] = {
         0x15, 0x00,                     //   Logical Minimum (0),
         0x25, 0x01,                     //   Logical Maximum (1),
         0x81, 0x02,                     //   Input (Data, Variable, Absolute), ;Modifier keys
+#if KEYBOARD_SIZE == 8
         0x95, 0x01,                     //   Report Count (1),
         0x75, 0x08,                     //   Report Size (8),
         0x81, 0x03,                     //   Input (Constant),          ;Reserved byte
+#endif
         0x95, 0x05,                     //   Report Count (5),
         0x75, 0x01,                     //   Report Size (1),
         0x05, 0x08,                     //   Usage Page (LEDs),
@@ -194,6 +196,7 @@ static uint8_t keyboard_report_desc[] = {
         0x95, 0x01,                     //   Report Count (1),
         0x75, 0x03,                     //   Report Size (3),
         0x91, 0x03,                     //   Output (Constant),         ;LED report padding
+#if KEYBOARD_SIZE == 8
         0x95, 0x06,                     //   Report Count (6),
         0x75, 0x08,                     //   Report Size (8),
         0x15, 0x00,                     //   Logical Minimum (0),
@@ -202,6 +205,16 @@ static uint8_t keyboard_report_desc[] = {
         0x19, 0x00,                     //   Usage Minimum (0),
         0x29, 0x7F,                     //   Usage Maximum (104),
         0x81, 0x00,                     //   Input (Data, Array),       ;Normal keys
+#elif KEYBOARD_SIZE == 16
+	0x95, 0x78,			//   Report Count (120),
+        0x75, 0x01,                     //   Report Size (1),
+        0x19, 0x00,                     //   Usage Minimum (0),
+        0x29, 0xE7,                     //   Usage Maximum (119),
+        0x05, 0x07,                     //   Usage Page (Key Codes),
+        0x15, 0x00,                     //   Logical Minimum (0),
+        0x25, 0x01,                     //   Logical Maximum (1),
+        0x81, 0x02,                     //   Input (Data, Variable, Absolute), ;Normal keys NKRO
+#endif
         0xC0                            // End Collection
 };
 #endif
@@ -2459,7 +2472,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE_12] = {
       0x09,                         // bmAttributes, 0x09 = isochronous, adaptive, 0x05 = isochronous, asynchronous
 #endif 
 	LSB(AUDIO_TX_SIZE_12), MSB(AUDIO_TX_SIZE_12),	// wMaxPacketSize
-	AUDIO_POLLING_INTERVAL_12,			 	// bInterval, 4 -> 2^(4-1)=8 -> every 8 micro-frames
+	AUDIO_POLLING_INTERVAL_12,			 	// bInterval 1...255 for full and low speed endpoints
 	// UAC2: 
       // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
       // Universal Serial Bus Device Class Definition for Audio Devices 2.0, Section 4.10.1.2, Table 4-34 page 86-87
@@ -2525,7 +2538,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE_12] = {
 	AUDIO_RX_ENDPOINT | 0x00,	// bEndpointAddress  (0x00 = 00000000 -> audio sink)
 	0x05, 				// bmAttributes = isochronous, asynchronous
 	LSB(AUDIO_RX_SIZE_12), MSB(AUDIO_RX_SIZE_12),	// wMaxPacketSize
-	AUDIO_POLLING_INTERVAL_12,			 	// bInterval, 4 -> 2^(4-1)=8 -> every 8 micro-frames
+	AUDIO_POLLING_INTERVAL_12,			 	// bInterval 1...255 for full and low speed endpoints
 	// UAC2: 
       // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
       // Universal Serial Bus Device Class Definition for Audio Devices 2.0, Section 4.10.1.2, Table 4-34 page 86-87
@@ -2544,7 +2557,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE_12] = {
 	AUDIO_SYNC_ENDPOINT | 0x80,	// bEndpointAddress, 0x80=10000000 -> IN endpoint
 	0x11, 				// bmAttributes = isochronous, feedback
 	4, 0,					// wMaxPacketSize, 4 bytes
-	AUDIO_POLLING_INTERVAL_12,	// bInterval, 4 -> 2^(4-1) = 8 -> every 8 micro-frames
+	AUDIO_POLLING_INTERVAL_12,	// bInterval 1...255 for full and low speed endpoints
 #endif
 
 #ifdef MIDI_INTERFACE
