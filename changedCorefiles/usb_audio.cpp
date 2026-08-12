@@ -81,28 +81,32 @@ USBAudioInInterface::Status AudioInputUSB::getStatus() const{
 float AudioInputUSB::volume(void){
 	return _usbInterface.volume();
 }
-#if AUDIO_SUBSLOT_SIZE==2
-void AudioInputUSB::copy_to_buffers(const uint8_t *src, uint16_t bIdx, uint16_t noChannels, unsigned int count, unsigned int len) {
-	const uint16_t *src16Bit =(const uint16_t *)src;
-	for (uint32_t i =0; i< len; i++){
-		for (uint16_t j =0; j< noChannels; j++){
-			rxBuffer[bIdx][j]->data[count +i]=*src16Bit++;
-		}
-	}
-}
-#endif
-
-#if AUDIO_SUBSLOT_SIZE==3
 void AudioInputUSB::copy_to_buffers(const uint8_t *src, uint16_t bIdx, uint16_t noChannels, unsigned int count, unsigned int len) {
 	for (uint32_t i =0; i< len; i++){
 		for (uint16_t j =0; j< noChannels; j++){
-			++src;
-			rxBuffer[bIdx][j]->data[count +i]=(*src++);
-			rxBuffer[bIdx][j]->data[count +i] |=(*src++)<<8;
+	#if AUDIO_USB_FORMAT == 1 // PCM
+		#if AUDIO_SUBSLOT_SIZE>=2 && AUDIO_SUBSLOT_SIZE<=4
+			// USB PCM data is always signed
+			src += (AUDIO_SUBSLOT_SIZE-2); // eventually ignore low PCM bytes (with loss of precision)
+			const int16_t *src16Bit = (const int16_t *)src;
+			rxBuffer[bIdx][j]->data[count+i] = *src16Bit;
+			src += 2;
+		#else
+			#error AUDIO_SUBSLOT_SIZE invalid
+		#endif
+	#elif AUDIO_USB_FORMAT == 4 // IEEE_FLOAT
+			constexpr auto scale = 1<<(sizeof(int16_t)*8-1);
+			constexpr auto fmin = -1.f;
+			constexpr auto fmax = float32_t((scale-1.)/scale);
+			const float32_t fsrc = *(const float32_t *)src;
+			rxBuffer[bIdx][j]->data[count+i] = int16_t(min(max(fsrc, fmin), fmax)*scale);
+			src += 4;
+	#else
+		#error AUDIO_USB_FORMAT invalid
+	#endif
 		}
 	}
 }
-#endif
 bool AudioInputUSB::setBlockQuite(uint16_t bIdx, uint16_t channel){        
 	if(!rxBuffer[bIdx][channel]){
 		rxBuffer[bIdx][channel] = AudioStream::allocate();
@@ -206,28 +210,29 @@ float AudioOutputUSB::getActualBIntervalUs() const{
 USBAudioOutInterface::Status AudioOutputUSB::getStatus() const{
 	return _usbInterface.getStatus();
 }
-#if AUDIO_SUBSLOT_SIZE==2
-void AudioOutputUSB::copy_from_buffers(uint8_t *dst, uint16_t bIdx, uint16_t noChannels, unsigned int count, unsigned int len) {
-	uint16_t* dst16Bit = (uint16_t*)dst;
-	for (uint32_t i =0; i< len; i++){
-		for (uint16_t j =0; j< noChannels; j++){
-			*dst16Bit++ =txBuffer[bIdx][j]->data[count +i];
-		}
-	}
-}
-#endif
-
-#if AUDIO_SUBSLOT_SIZE==3
 void AudioOutputUSB::copy_from_buffers(uint8_t *dst, uint16_t bIdx, uint16_t noChannels, unsigned int count, unsigned int len) {
 	for (uint32_t i =0; i< len; i++){
 		for (uint16_t j =0; j< noChannels; j++){
-			*dst++ =0;
-			*dst++ =((txBuffer[bIdx][j]->data[count +i])) & 255;
-			*dst++ =((txBuffer[bIdx][j]->data[count +i]) >> 8) & 255;
+	#if AUDIO_USB_FORMAT == 1 // PCM
+		#if AUDIO_SUBSLOT_SIZE>=2 && AUDIO_SUBSLOT_SIZE<=4
+			for(int k = 0; k < AUDIO_SUBSLOT_SIZE-2; ++k)
+				*dst++ = 0; // zero low bytes
+			int16_t* dst16Bit = (int16_t*)dst;
+			*dst16Bit = txBuffer[bIdx][j]->data[count+i];
+			dst += 2;
+		#else
+			#error AUDIO_SUBSLOT_SIZE invalid
+		#endif
+	#elif AUDIO_USB_FORMAT == 4 // IEEE_FLOAT
+			constexpr auto scale = 1<<(sizeof(int16_t)*8-1);
+			*(float32_t *)dst = txBuffer[bIdx][j]->data[count+i]*float32_t(1./scale);
+			dst += 4;
+	#else
+		#error AUDIO_USB_FORMAT invalid
+	#endif
 		}
 	}
 }
-#endif
 
 void AudioOutputUSB::releaseBlocks(uint16_t bIdx, uint16_t noChannels){  
 	for (uint16_t i =0; i< noChannels; i++){

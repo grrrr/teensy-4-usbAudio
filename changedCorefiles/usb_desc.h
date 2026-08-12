@@ -968,9 +968,28 @@ extern const usb_descriptor_list_t usb_descriptor_list[];
 
 #ifdef AUDIO_INTERFACE
   #define CEIL_DIV(x, y) (((x) + (y) - 1) / (y))
+<<<<<<< HEAD
   #ifndef AUDIO_SUBSLOT_SIZE
   #define AUDIO_SUBSLOT_SIZE 2 //size of an audio sample in bytes (possible values: 1,2,3 or 4)
+=======
+
+  #ifndef AUDIO_USB_FORMAT
+  #define AUDIO_USB_FORMAT 1 // 1...PCM, 4...IEEE_FLOAT
+>>>>>>> preserve
   #endif
+
+  #if AUDIO_USB_FORMAT == 4
+    #if AUDIO_SUBSLOT_SIZE != 4
+      #warning "For AUDIO_USB_FORMAT==4 (IEEE_FLOAT), AUDIO_SUBSLOT_SIZE needs to be 4 (32 bits)"
+    #endif
+    #undef AUDIO_SUBSLOT_SIZE
+    #define AUDIO_SUBSLOT_SIZE 4
+  #else
+    #ifndef AUDIO_SUBSLOT_SIZE
+      #define AUDIO_SUBSLOT_SIZE 2 //size of an audio sample in bytes (possible values: 1,2,3 or 4)
+    #endif
+  #endif
+
   #define AUDIO_BITRESOLUTION (8*AUDIO_SUBSLOT_SIZE)
   
   //Define in the usb audio 2 specification (Audio20 final.pdf) on page 26
