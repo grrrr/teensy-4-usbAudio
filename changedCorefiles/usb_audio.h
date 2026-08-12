@@ -351,4 +351,5 @@ class AudioOutputUSBOct: public AudioOutputUSB { public: AudioOutputUSBOct(): Au
 #endif // USB_AUDIO_NO_CHANNELS_480 >= 6
 #endif // USB_AUDIO_NO_CHANNELS_480 >= 4
 
+#endif // defined(__cplusplus)
 #endif // AUDIO_INTERFACE
