@@ -52,6 +52,6 @@ Main features are:
 - USB output is able to duplicate or skip single samples in order to prevent buffer under- and overruns. This is not a perfect solution, but is an improvement to the current implementation.
 - USB input: Parameters of the PI controller that computes the feedback can optionally be set at the constructor.
 - USB input and output: The target number of buffered samples can be configured. (Can e.g. be increased if buffer under- or overruns occur.)
-- USB input and ouput provide information about their status (getStatus) like if and how many buffer over- and under-runs occurred.
+- USB input and output provide information about their status (getStatus) like if and how many buffer over- and under-runs occurred.
 
 Tested with Teensyduino 1.59 + Arduino IDE being 1.8.19 and Visual Studio Code + Platformio/Teensy platform version 5.0.0
